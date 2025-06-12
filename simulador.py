@@ -1,3 +1,5 @@
+from colonia import Colonia
+
 class Simulador():
     def __init__(self, colonia):
         self.__colonia = colonia

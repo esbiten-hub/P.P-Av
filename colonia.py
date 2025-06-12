@@ -1,3 +1,5 @@
+from bacteria_ambiente import Bacteria, Ambiente
+
 class Colonia:
     def __init__(self, bacterias, ambiente):
         self.__bacterias = bacterias

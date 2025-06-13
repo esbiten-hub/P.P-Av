@@ -56,6 +56,7 @@ class MainWindow(Gtk.ApplicationWindow):
         if check_1 == True and check_2 == True:
             simulador = Simulador(self.especie_entry.get_text(), int(self.cantidad_entry.get_text()), self.factores_ambientales.get_selected_item().get_string(), int(self.pasos_entry.get_text()))
             simulador.inicia_simulacion()
+            simulador.run()
 
     def create_boxes(self):
         #Creacion del panel izquierdo

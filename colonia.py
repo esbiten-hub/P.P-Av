@@ -1,3 +1,6 @@
+import matplotlib.pyplot as plt
+import random
+from matplotlib.patches import Patch
 from bacteria_ambiente import Bacteria, Ambiente
 
 class Colonia:
@@ -31,8 +34,9 @@ class Colonia:
 
     def paso():
         pass
-
+                
     def reporte_estado():
+        
         pass
 
     def exportar_csv():

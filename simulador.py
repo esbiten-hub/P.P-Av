@@ -17,10 +17,9 @@ class Simulador():
         ambiente = Ambiente(self.factor_ambiental)
         self.colonia = Colonia(lista_bacterias, ambiente)
 
-        self.run(self.pasos)
-
-    def run(self, pasos):
-        pass
+    def run(self):
+        for i in range(self.pasos):
+            self.colonia.paso()
 
     def graficar_crecimiento(self):
         pass

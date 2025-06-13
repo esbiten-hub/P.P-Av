@@ -12,6 +12,8 @@ class MainWindow(Gtk.ApplicationWindow):
         self.especie_entry = None
         self.cantidad_entry = None
         self.simular_button = None
+        self.pasos_entry = None
+        self.factores_ambientales = None
 
         self.create_header_bar()
         self.create_boxes()
@@ -22,7 +24,7 @@ class MainWindow(Gtk.ApplicationWindow):
         check_1 = False
         check_2 = False
         #Valida que los campos esten llenos
-        if self.especie_entry.get_text() == "" or self.cantidad_entry.get_text() == "":
+        if self.especie_entry.get_text() == "" or self.cantidad_entry.get_text() == "" or self.pasos_entry.get_text() == "":
             error_dialog = Gtk.MessageDialog(
                 transient_for = self,
                 modal = True,
@@ -36,14 +38,14 @@ class MainWindow(Gtk.ApplicationWindow):
         else:
             check_1 = True
         #Valida que se ingrese el tipo de dato adecuado
-        if (not re.fullmatch("[A-Za-z]+", self.especie_entry.get_text()) or self.cantidad_entry.get_text().isalpha()) and check_1 == True:
+        if (not re.fullmatch("[A-Za-z]+", self.especie_entry.get_text()) or self.cantidad_entry.get_text().isalpha() or int(self.cantidad_entry.get_text()) > 20 or self.pasos_entry.get_text().isalpha()) and check_1 == True:
             error_dialog = Gtk.MessageDialog(
                 transient_for = self,
                 modal = True,
                 message_type = Gtk.MessageType.ERROR,
                 buttons = Gtk.ButtonsType.OK,
                 text = "Error al ingresar los datos",
-                secondary_text = "Ingrese el tipo de dato adecuado",
+                secondary_text = "Ingrese el tipo/cantidad de dato adecuado",
             )
             error_dialog.connect("response", self.on_error_dialog_response)
             error_dialog.show()
@@ -52,7 +54,8 @@ class MainWindow(Gtk.ApplicationWindow):
 
         #Si se ingresaron los datos correctamente, se inicia el simulador
         if check_1 == True and check_2 == True:
-            pass
+            simulador = Simulador(self.especie_entry.get_text(), int(self.cantidad_entry.get_text()), self.factores_ambientales.get_selected_item().get_string(), int(self.pasos_entry.get_text()))
+            simulador.inicia_simulacion()
 
     def create_boxes(self):
         #Creacion del panel izquierdo
@@ -64,18 +67,22 @@ class MainWindow(Gtk.ApplicationWindow):
         right_panel.set_size_request(100, -1)
         especie_label = Gtk.Label(label = "Especie:")
         self.especie_entry = Gtk.Entry()
-        cantidad_label = Gtk.Label(label = "Cantidad de bacterias:")
+        cantidad_label = Gtk.Label(label = "Cantidad de bacterias (máx 20):")
         self.cantidad_entry = Gtk.Entry()
+        pasos_label = Gtk.Label(label = "Pasos a simular:")
+        self.pasos_entry = Gtk.Entry()
         factor_ambiental = Gtk.Label(label = "Factor ambiental:")
-        factores_ambientales = Gtk.DropDown.new_from_strings(["Nada", "Antibiótico"])
+        self.factores_ambientales = Gtk.DropDown.new_from_strings(["Nada", "Antibiótico"])
         self.simular_button = Gtk.Button(label = "Simular")
 
         right_panel.append(especie_label)
         right_panel.append(self.especie_entry)
         right_panel.append(cantidad_label)
         right_panel.append(self.cantidad_entry)
+        right_panel.append(pasos_label)
+        right_panel.append(self.pasos_entry)
         right_panel.append(factor_ambiental)
-        right_panel.append(factores_ambientales)
+        right_panel.append(self.factores_ambientales)
         right_panel.append(self.simular_button)
 
         right_panel.set_halign(Gtk.Align.START)

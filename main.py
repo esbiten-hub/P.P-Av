@@ -81,22 +81,23 @@ class MainWindow(Gtk.ApplicationWindow):
             #Crea el Gtk.Picture()
             picture = Gtk.Picture()
             picture.set_paintable(texture)
+            picture.set_hexpand(True)
+            picture.set_vexpand(True)
 
             #Poner imagen en scroll
             scroll = Gtk.ScrolledWindow()
             scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
             scroll.set_child(picture)
-            self.set_child(scroll)
             self.left_panel.append(scroll)
 
     def create_boxes(self):
         #Creacion del panel izquierdo
         self.left_panel = Gtk.Box(orientation = Gtk.Orientation.VERTICAL, spacing = 6)
-        self.left_panel.append(Gtk.Label(label = "Panel izquierdo"))
+        self.left_panel.set_hexpand(True)
+        self.left_panel.set_vexpand(True)
 
         #Creacion y configuracion del panel derecho
         self.right_panel  = Gtk.Box(orientation = Gtk.Orientation.VERTICAL, spacing = 6)
-        self.right_panel.set_size_request(100, -1)
         especie_label = Gtk.Label(label = "Especie:")
         self.especie_entry = Gtk.Entry()
         cantidad_label = Gtk.Label(label = "Cantidad de bacterias (máx 5):")
@@ -117,10 +118,12 @@ class MainWindow(Gtk.ApplicationWindow):
         self.right_panel.append(self.factores_ambientales)
         self.right_panel.append(self.simular_button)
 
-        self.right_panel.set_halign(Gtk.Align.END)
-        self.left_panel.set_halign(Gtk.Align.START)
-        self.set_child(self.left_panel)
-        self.set_child(self.right_panel)
+        #Disposicion de los paneles
+
+        main_box = Gtk.Box(orientation = Gtk.Orientation.HORIZONTAL, spacing = 6)
+        main_box.append(self.left_panel)
+        main_box.append(self.right_panel)
+        self.set_child(main_box)
 
     def create_header_bar(self):
 

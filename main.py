@@ -1,6 +1,7 @@
+import random, gi, re, io
+from PIL import Image
 from simulador import Simulador
-import random, gi, re
-from gi.repository import Gtk, Gio
+from gi.repository import Gtk, Gdk, GLib, Gio
 
 gi.require_version('Gtk', '4.0')
 
@@ -14,6 +15,9 @@ class MainWindow(Gtk.ApplicationWindow):
         self.simular_button = None
         self.pasos_entry = None
         self.factores_ambientales = None
+
+        self.left_panel = None
+        self.right_panel = None
 
         self.create_header_bar()
         self.create_boxes()
@@ -38,7 +42,7 @@ class MainWindow(Gtk.ApplicationWindow):
         else:
             check_1 = True
         #Valida que se ingrese el tipo de dato adecuado
-        if (not re.fullmatch("[A-Za-z]+", self.especie_entry.get_text()) or self.cantidad_entry.get_text().isalpha() or int(self.cantidad_entry.get_text()) > 20 or self.pasos_entry.get_text().isalpha()) and check_1 == True:
+        if (not re.fullmatch("[A-Za-z]+", self.especie_entry.get_text()) or self.cantidad_entry.get_text().isalpha() or int(self.cantidad_entry.get_text()) > 5 or self.pasos_entry.get_text().isalpha() or int(self.pasos_entry.get_text()) > 10) and check_1 == True:
             error_dialog = Gtk.MessageDialog(
                 transient_for = self,
                 modal = True,
@@ -56,40 +60,67 @@ class MainWindow(Gtk.ApplicationWindow):
         if check_1 == True and check_2 == True:
             simulador = Simulador(self.especie_entry.get_text(), int(self.cantidad_entry.get_text()), self.factores_ambientales.get_selected_item().get_string(), int(self.pasos_entry.get_text()))
             simulador.inicia_simulacion()
-            simulador.run()
+            buf = simulador.run()
+            
+            #Cargar imagen con PIL
+            image = Image.open(buf)
+            width, height = image.size
+
+            #Convertir a bytes
+            data = image.tobytes()
+            gbytes = GLib.Bytes.new(data)
+            
+            texture = Gdk.MemoryTexture.new(
+                width,
+                height,
+                5,
+                gbytes,
+                width * 4
+            )
+
+            #Crea el Gtk.Picture()
+            picture = Gtk.Picture()
+            picture.set_paintable(texture)
+
+            #Poner imagen en scroll
+            scroll = Gtk.ScrolledWindow()
+            scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+            scroll.set_child(picture)
+            self.set_child(scroll)
+            self.left_panel.append(scroll)
 
     def create_boxes(self):
         #Creacion del panel izquierdo
-        left_panel = Gtk.Box(orientation = Gtk.Orientation.VERTICAL, spacing = 6)
-        left_panel.append(Gtk.Label(label = "Panel izquierdo"))
+        self.left_panel = Gtk.Box(orientation = Gtk.Orientation.VERTICAL, spacing = 6)
+        self.left_panel.append(Gtk.Label(label = "Panel izquierdo"))
 
         #Creacion y configuracion del panel derecho
-        right_panel  = Gtk.Box(orientation = Gtk.Orientation.VERTICAL, spacing = 6)
-        right_panel.set_size_request(100, -1)
+        self.right_panel  = Gtk.Box(orientation = Gtk.Orientation.VERTICAL, spacing = 6)
+        self.right_panel.set_size_request(100, -1)
         especie_label = Gtk.Label(label = "Especie:")
         self.especie_entry = Gtk.Entry()
-        cantidad_label = Gtk.Label(label = "Cantidad de bacterias (máx 20):")
+        cantidad_label = Gtk.Label(label = "Cantidad de bacterias (máx 5):")
         self.cantidad_entry = Gtk.Entry()
-        pasos_label = Gtk.Label(label = "Pasos a simular:")
+        pasos_label = Gtk.Label(label = "Pasos a simular (máx 10):")
         self.pasos_entry = Gtk.Entry()
         factor_ambiental = Gtk.Label(label = "Factor ambiental:")
         self.factores_ambientales = Gtk.DropDown.new_from_strings(["Nada", "Antibiótico"])
         self.simular_button = Gtk.Button(label = "Simular")
 
-        right_panel.append(especie_label)
-        right_panel.append(self.especie_entry)
-        right_panel.append(cantidad_label)
-        right_panel.append(self.cantidad_entry)
-        right_panel.append(pasos_label)
-        right_panel.append(self.pasos_entry)
-        right_panel.append(factor_ambiental)
-        right_panel.append(self.factores_ambientales)
-        right_panel.append(self.simular_button)
+        self.right_panel.append(especie_label)
+        self.right_panel.append(self.especie_entry)
+        self.right_panel.append(cantidad_label)
+        self.right_panel.append(self.cantidad_entry)
+        self.right_panel.append(pasos_label)
+        self.right_panel.append(self.pasos_entry)
+        self.right_panel.append(factor_ambiental)
+        self.right_panel.append(self.factores_ambientales)
+        self.right_panel.append(self.simular_button)
 
-        right_panel.set_halign(Gtk.Align.START)
-        left_panel.set_halign(Gtk.Align.END)
-        self.set_child(left_panel)
-        self.set_child(right_panel)
+        self.right_panel.set_halign(Gtk.Align.END)
+        self.left_panel.set_halign(Gtk.Align.START)
+        self.set_child(self.left_panel)
+        self.set_child(self.right_panel)
 
     def create_header_bar(self):
 

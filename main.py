@@ -60,35 +60,36 @@ class MainWindow(Gtk.ApplicationWindow):
         if check_1 == True and check_2 == True:
             simulador = Simulador(self.especie_entry.get_text(), int(self.cantidad_entry.get_text()), self.factores_ambientales.get_selected_item().get_string(), int(self.pasos_entry.get_text()))
             simulador.inicia_simulacion()
-            buf = simulador.run()
+            bytes_por_simulacion = simulador.run()
             
-            #Cargar imagen con PIL
-            image = Image.open(buf)
-            width, height = image.size
+            for i in bytes_por_simulacion:
+                #Cargar imagen con PIL
+                image = Image.open(i)
+                width, height = image.size
 
-            #Convertir a bytes
-            data = image.tobytes()
-            gbytes = GLib.Bytes.new(data)
+                #Convertir a bytes
+                data = image.tobytes()
+                gbytes = GLib.Bytes.new(data)
             
-            texture = Gdk.MemoryTexture.new(
-                width,
-                height,
-                5,
-                gbytes,
-                width * 4
-            )
+                texture = Gdk.MemoryTexture.new(
+                    width,
+                    height,
+                    5,
+                    gbytes,
+                    width * 4
+                )
 
-            #Crea el Gtk.Picture()
-            picture = Gtk.Picture()
-            picture.set_paintable(texture)
-            picture.set_hexpand(True)
-            picture.set_vexpand(True)
+                #Crea el Gtk.Picture()
+                picture = Gtk.Picture()
+                picture.set_paintable(texture)
+                picture.set_hexpand(True)
+                picture.set_vexpand(True)
 
-            #Poner imagen en scroll
-            scroll = Gtk.ScrolledWindow()
-            scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
-            scroll.set_child(picture)
-            self.left_panel.append(scroll)
+                #Poner imagen en scroll
+                scroll = Gtk.ScrolledWindow()
+                scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+                scroll.set_child(picture)
+                self.left_panel.append(scroll)
 
     def create_boxes(self):
         #Creacion del panel izquierdo

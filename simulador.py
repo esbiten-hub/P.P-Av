@@ -14,15 +14,19 @@ class Simulador():
     def inicia_simulacion(self):
         lista_bacterias = []
         for i in range(self.cantidad_bacterias):
-            bacteria = Bacteria( i+1, self.especie_bacteria)
+            bacteria = Bacteria( i+100, self.especie_bacteria)
             lista_bacterias.append(bacteria)
         ambiente = Ambiente(self.factor_ambiental)
+        ambiente.get_grilla()[:,:,1] = ambiente.get_nutrientes() #Asigna nutrientes
         self.colonia = Colonia(lista_bacterias, ambiente)
 
     def run(self):
+        bytes_por_simulacion = []
         for i in range(self.pasos):
-            buf = self.colonia.paso(i)
-            return buf
+            fig_bytes = self.colonia.paso(i)
+            bytes_por_simulacion.append(fig_bytes)
+
+        return bytes_por_simulacion
 
     def graficar_crecimiento(self):
         pass

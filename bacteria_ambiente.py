@@ -83,7 +83,7 @@ class Bacteria:
 
 class Ambiente:
     def __init__(self, factor_ambiental):
-        self.__grilla = np.zeros((50, 50))
+        self.__grilla = np.zeros((10, 10))
         self.__nutrientes = 50
         self.__factor_ambiental = factor_ambiental
     

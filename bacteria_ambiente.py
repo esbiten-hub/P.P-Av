@@ -4,7 +4,7 @@ class Bacteria:
     def __init__(self, id, raza):
         self.__id = id
         self.__raza = raza
-        self.__energia = 100
+        self.__energia = 50 #30 -> mueren| 70 -> dividen
         self.__resistencia = False
         self.__estado = 'activa'
     
@@ -72,7 +72,6 @@ class Bacteria:
         pass
 
     def dividirse(self):
-        
         pass
 
     def mutar(self):
@@ -83,8 +82,8 @@ class Bacteria:
 
 class Ambiente:
     def __init__(self, factor_ambiental):
-        self.__grilla = np.zeros((10, 10))
-        self.__nutrientes = 50
+        self.__grilla = np.zeros((10, 10, 2))
+        self.__nutrientes = 30
         self.__factor_ambiental = factor_ambiental
     
     def get_grilla(self):

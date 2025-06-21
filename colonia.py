@@ -8,8 +8,9 @@ from bacteria_ambiente import Bacteria, Ambiente
 
 class Colonia:
     def __init__(self, bacterias, ambiente):
-        self.__bacterias = bacterias #list de Class Bacteria
-        self.__ambiente = ambiente #Class Ambiente
+        self.__bacterias = bacterias #list de Bacterias
+        self.__ambiente = ambiente #Ambiente
+        self.__matriz_bacteriana = None
     
     def get_bacterias(self):
         return self.__bacterias
@@ -36,15 +37,16 @@ class Colonia:
             print(f"Error: {e}")
 
     def paso(self, paso_contador):
-        grilla = self.get_ambiente().get_grilla()
-
         #Si es el primer paso, se colocan las bacterias
         if paso_contador == 0:
+
+            #Direcciones posibles para bacterias
             ocupado = []
-            direcciones_posibles = [[-1,0], [1,0], [0,-1], [0,1]]
-            grilla[0,0,0] = 1
-            #grilla[0,0,0] = self.get_bacterias()[0].get_id()
-            #grilla[0,0,0] = self.get_bacterias()[0].get_estado()
+            direcciones_posibles = [[-1,0], [1,0], [0,-1], [0,1], [-1,-1], [-1,1], [1,-1], [1,1]]
+
+            #Crea la matriz de Objetos Bacteria
+            matriz = [[0 for i in range(10)] for j in range(10)]
+            matriz[0][0] = self.get_bacterias()[0]
             ocupado.append([0,0])
             for bacteria in self.get_bacterias()[1:]:
                 while True:
@@ -53,22 +55,29 @@ class Colonia:
                     nueva_posicion = [x1 + x2, y1 + y2]
                     if nueva_posicion[0] < 0 or nueva_posicion[0] > 9 or nueva_posicion[1] < 0 or nueva_posicion[1] > 9:
                         pass
-                    elif grilla[nueva_posicion[0], nueva_posicion[1], 0] != 0:
+                    elif matriz[nueva_posicion[0]][nueva_posicion[1]] != 0:
                         pass
                     else:
-                        #grilla[nueva_posicion[0], nueva_posicion[1], 0] = bacteria.get_id()
-                        grilla[nueva_posicion[0], nueva_posicion[1], 0] = 1
-                        #grilla[nueva_posicion[0], nueva_posicion[1], 0] = bacteria.get_estado()
+                        matriz[nueva_posicion[0]][nueva_posicion[1]] = bacteria
                         ocupado.append(nueva_posicion)
                         break
-            
-            #Extrae capa de bacterias
-            bacterias = grilla[:,:,0]
+
+            self.__matriz_bacteriana = matriz
+
+            #Obtiene la matriz numpy de Ambiente
+            grilla = self.get_ambiente().get_grilla()
+            for i in range(10):
+                for j in range(10):
+                    if isinstance(matriz[i][j], Bacteria):
+                        grilla[i,j] = 1
+            self.get_ambiente().set_grilla(grilla)
+
+            #Grafica grilla
             #Crear el mapa de colores
             colores = ['#e41a1c', '#4daf4a', '#ff7f00', '#a65628', '#999999']
             cmap = ListedColormap(colores)
             fig, ax = plt.subplots(figsize=(6,6))
-            cax = ax.imshow(bacterias, cmap=cmap, vmin=0, vmax=4)
+            cax = ax.imshow(grilla, cmap=cmap, vmin=0, vmax=4)
 
             #Agrega leyenda
             legend_elements = [
@@ -87,10 +96,10 @@ class Colonia:
             ax.set_yticklabels([])
             ax.grid(color ='gray',linestyle='-', linewidth =0.5)
 
-            #Mostrar valores en cada celdda
+            #Mostrar valores en cada celda
             for i in range(10):
                 for j in range(10):
-                    val = grilla[i,j,0]
+                    val = grilla[i,j]
                     if val > 0:
                         ax.text(j, i, int(val), va='center', ha='center', color='white')
             plt.title("Colonia de bacterias - Paso 1")
@@ -110,14 +119,91 @@ class Colonia:
 
         #Si no es el primer paso, se actualiza la grilla según sea el caso
         else:
-            grilla = self.get_ambiente().get_grilla()
+            matriz = self.__matriz_bacteriana
             for i in range(10):
                 for j in range(10):
-                    pass
+                    if isinstance(matriz[i][j], Bacteria):
+                        bacteria = matriz[i][j]
+                        if bacteria.get_estado() == "activa":
+                            if bacteria.get_energia() < 25:
+                                nutrientes = self.get_ambiente().get_nutrientes()[i][j]
+                                if nutrientes > 0:
+                                    nutrientes_restantes = bacteria.alimentar(nutrientes)                                    
+                                    self.get_ambiente().set_nutrientes_coordenada(i, j, nutrientes_restantes)
+                                    self.get_ambiente().actualizar_nutrientes()
+                                else:
+                                    bacteria.falta_de_alimento()
+
+                            if bacteria.get_energia() >= 25:
+                                #Reunir coordenadas hacia donde podría dividirse la bacteria
+                                ubicaciones_posibles = [[i-1, j], [i+1, j], [i, j-1], [i, j+1]]
+                                #Filtrar ubicaciones
+                                ubicaciones_validas = []
+                                for ubicacion in ubicaciones_posibles:
+                                    if ubicacion[0] < 0 or ubicacion[0] > 9 or ubicacion[1] < 0 or ubicacion[1] > 9:
+                                        pass
+                                    elif isinstance(matriz[ubicacion[0]][ubicacion[1]], Bacteria):
+                                        pass
+                                    else:
+                                        ubicaciones_validas.append(ubicacion)
+                                if len(ubicaciones_validas) > 0:
+                                    x, y = random.choice(ubicaciones_validas)
+                                    id_nueva_bacteria = self.get_bacterias()[-1].get_id() + 1
+                                    nueva_bacteria = bacteria.dividirse(id_nueva_bacteria)
+                                    self.__bacterias.append(nueva_bacteria)
+                                    matriz[x][y] = nueva_bacteria
+                                    self.get_ambiente().get_grilla()[x][y] = 1
+                            
+                            if bacteria.morir():
+                                self.get_ambiente().get_grilla()[i][j] = 2
+                            bacteria.desgaste_x_ciclo()
+
+            #Grafica grilla
+            grilla = self.get_ambiente().get_grilla()
+            #Crear el mapa de colores
+            colores = ['#e41a1c', '#4daf4a', '#ff7f00', '#a65628', '#999999']
+            cmap = ListedColormap(colores)
+            fig, ax = plt.subplots(figsize=(6,6))
+            cax = ax.imshow(grilla, cmap=cmap, vmin=0, vmax=4)
+
+            #Agrega leyenda
+            legend_elements = [
+                Patch(facecolor='#4daf4a', label='Bacteria activa'),
+                Patch(facecolor='#ff7f00', label='Bacteria muerta'),
+                Patch(facecolor='#a65628', label='Bacteria resistente'),
+                Patch(facecolor='#999999', label='Biofilm'),
+            ]
+
+            ax.legend(handles=legend_elements, loc='upper right', bbox_to_anchor=(1.45, 1))
+            
+            #Configuracion de la grilla
+            ax.set_xticks(np.arange(0, 10, 1))
+            ax.set_yticks(np.arange (0 ,10, 1))
+            ax.set_xticklabels([])
+            ax.set_yticklabels([])
+            ax.grid(color ='gray',linestyle='-', linewidth =0.5)
+
+            #Mostrar valores en cada celda
+            for i in range(10):
+                for j in range(10):
+                    val = grilla[i,j]
+                    if val > 0:
+                        ax.text(j, i, int(val), va='center', ha='center', color='white')
+            plt.title(f"Colonia de bacterias - Paso {paso_contador + 1}")
+            plt.tight_layout()
+
+            #################################################################
+            #Aqui deberia salir un CSV con el estado inicial de las bacterias
+            #################################################################
+
+            #Guardar la imagen
+            fig_bytes = io.BytesIO()
+            fig.savefig(fig_bytes, format='png')
+            plt.close(fig)
+            fig_bytes.seek(0)
+
+            return fig_bytes
                         
-            
-            
-                
     def reporte_estado(self):
         pass
 

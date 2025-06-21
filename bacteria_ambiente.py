@@ -1,12 +1,13 @@
 import numpy as np
+import random
 
 class Bacteria:
     def __init__(self, id, raza):
         self.__id = id
         self.__raza = raza
-        self.__energia = 50 #30 -> mueren| 70 -> dividen
+        self.__energia = 10 #0 -> mueren| 25 -> dividen
         self.__resistencia = False
-        self.__estado = 'activa'
+        self.__estado = 'activa' #activa|inactiva
     
     def get_id(self):
         return self.__id
@@ -68,30 +69,60 @@ class Bacteria:
         except ValueError as e:
             print(f"Error: {e}")
     
-    def alimentar(self):
-        pass
+    def alimentar(self, nutrientes):
+        if nutrientes >= 20:
+            while True:
+                nutrientes_consumir = random.uniform(20, 25)
+                if nutrientes_consumir <= nutrientes:
+                    break
+            self.__energia += nutrientes_consumir
+            nutrientes -= nutrientes_consumir
+            print(f"LA BACTERIA COMIO {nutrientes_consumir} NUTRIENTES")
+            print(f"LA BACTERIA QUEDO CON {self.__energia} NUTRIENTES")
+            print(f"SE DEVUELVEN A LA GRILLA {nutrientes} NUTRIENTES")
+            return nutrientes
+        elif 0 < nutrientes < 20:
+            self.__energia += nutrientes
+            print(f"LA BACTERIA COMIO {nutrientes} NUTRIENTES")
+            print(f"LA BACTERIA QUEDO CON {self.__energia} NUTRIENTES")
+            print(f"SE DEVUELVEN A LA GRILLA {0} NUTRIENTES")
+            return 0
+    
+    def falta_de_alimento(self):
+        self.__energia -= random.uniform(10, 15) #Pierde energia por falta de nutrientes 
+        print("NO QUEDAN MAS NUTRIENTES, SE PIERDE ENERGIA")
+        pint("LA BACTERIA QUEDO CON ENERGIA: {self.__energia}")
 
-    def dividirse(self):
-        pass
-
+    def dividirse(self, id_nueva_bacteria):
+        self.__energia = 10
+        nueva_bacteria = Bacteria(id_nueva_bacteria, self.get_raza)
+        print("SE CREO LA NUEVA BACTERIA")
+        return nueva_bacteria
+        
     def mutar(self):
         pass
 
     def morir(self):
-        pass
+        if self.__energia < 10:
+            self.__estado = 'inactiva'
+            return True
+    
+    def desgaste_x_ciclo(self):
+        energia_gastada = random.uniform(1,5)
+        self.__energia -= energia_gastada
 
 class Ambiente:
     def __init__(self, factor_ambiental):
-        self.__grilla = np.zeros((10, 10, 2))
-        self.__nutrientes = 30
+        self.__grilla = np.zeros((10, 10), dtype=int) #grilla de numeros que se va a graficar
+        self.__grilla_nutrientes = [[25 for i in range(10)] for j in range(10)]
         self.__factor_ambiental = factor_ambiental
     
     def get_grilla(self):
         return self.__grilla
     
-    def set_grilla(self):
+    def set_grilla(self, grilla):
         try:
-            if isinstance(grilla, list):
+            if isinstance(grilla, np.ndarray):
                 self.__grilla = grilla
             else:
                 raise ValueError("La grilla debe ser una lista.")
@@ -99,7 +130,7 @@ class Ambiente:
             print(f"Error: {e}")
 
     def get_nutrientes(self):
-        return self.__nutrientes
+        return self.__grilla_nutrientes
 
     def set_nutrientes(self, nutrientes):
         try:
@@ -109,6 +140,9 @@ class Ambiente:
                 raise ValueError("Los nutrientes deben ser un numero entero.")
         except ValueError as e:
             print(f"Error: {e}")
+
+    def set_nutrientes_coordenada(self, i, j, nutrientes_restantes):
+        self.__grilla_nutrientes[i][j] = nutrientes_restantes
 
     def get_factor_ambiental(self):
         return self.__factor_ambiental
@@ -123,7 +157,14 @@ class Ambiente:
             print(f"Error: {e}")
 
     def actualizar_nutrientes(self):
-        pass
+        total_nutrientes = 0
+        for i in range(10):
+            for j in range(10):
+                total_nutrientes += self.__grilla_nutrientes[i][j]
+        nutrientes_x_casilla = total_nutrientes / 100
+        for i in range(10):
+            for j in range(10):
+                self.__grilla_nutrientes[i][j] = nutrientes_x_casilla
 
     def difundir_nutrientes(self):
         pass

@@ -17,7 +17,6 @@ class Simulador():
             bacteria = Bacteria( i+100, self.especie_bacteria)
             lista_bacterias.append(bacteria)
         ambiente = Ambiente(self.factor_ambiental)
-        ambiente.get_grilla()[:,:,1] = ambiente.get_nutrientes() #Asigna nutrientes
         self.colonia = Colonia(lista_bacterias, ambiente)
 
     def run(self):

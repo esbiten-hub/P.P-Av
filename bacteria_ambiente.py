@@ -77,30 +77,33 @@ class Bacteria:
                     break
             self.__energia += nutrientes_consumir
             nutrientes -= nutrientes_consumir
-            print(f"LA BACTERIA COMIO {nutrientes_consumir} NUTRIENTES")
-            print(f"LA BACTERIA QUEDO CON {self.__energia} NUTRIENTES")
-            print(f"SE DEVUELVEN A LA GRILLA {nutrientes} NUTRIENTES")
             return nutrientes
         elif 0 < nutrientes < 20:
             self.__energia += nutrientes
-            print(f"LA BACTERIA COMIO {nutrientes} NUTRIENTES")
-            print(f"LA BACTERIA QUEDO CON {self.__energia} NUTRIENTES")
-            print(f"SE DEVUELVEN A LA GRILLA {0} NUTRIENTES")
             return 0
     
     def falta_de_alimento(self):
         self.__energia -= random.uniform(10, 15) #Pierde energia por falta de nutrientes 
-        print("NO QUEDAN MAS NUTRIENTES, SE PIERDE ENERGIA")
-        pint("LA BACTERIA QUEDO CON ENERGIA: {self.__energia}")
 
     def dividirse(self, id_nueva_bacteria):
-        self.__energia = 10
+        self.__energia -= 15
         nueva_bacteria = Bacteria(id_nueva_bacteria, self.get_raza)
-        print("SE CREO LA NUEVA BACTERIA")
+        if self.__resistencia:
+            nueva_bacteria.set_resistencia(True)
         return nueva_bacteria
         
     def mutar(self):
         pass
+
+    def efecto_factor_ambiental(self, factor_ambiental):
+        if factor_ambiental == 'Antibiótico':
+            if not self.__resistencia and self.__estado == "activa":
+                p = 0.15
+                if random.random() > p:
+                    self.__estado = 'inactiva'
+                    self.__energia = 0
+                else:
+                    self.__resistencia = True
 
     def morir(self):
         if self.__energia < 10:
@@ -156,7 +159,7 @@ class Ambiente:
         except ValueError as e:
             print(f"Error: {e}")
 
-    def actualizar_nutrientes(self):
+    def difundir_nutrientes(self):
         total_nutrientes = 0
         for i in range(10):
             for j in range(10):
@@ -165,9 +168,3 @@ class Ambiente:
         for i in range(10):
             for j in range(10):
                 self.__grilla_nutrientes[i][j] = nutrientes_x_casilla
-
-    def difundir_nutrientes(self):
-        pass
-
-    def aplicar_ambiente(self):
-        pass

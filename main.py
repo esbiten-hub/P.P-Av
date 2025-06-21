@@ -15,6 +15,9 @@ class MainWindow(Gtk.ApplicationWindow):
         self.simular_button = None
         self.pasos_entry = None
         self.factores_ambientales = None
+        self.siguiente_button = None
+        self.scroll_list = []
+        self.scroll_en_pantalla = None
 
         self.left_panel = None
         self.right_panel = None
@@ -23,7 +26,78 @@ class MainWindow(Gtk.ApplicationWindow):
         self.create_boxes()
 
         self.simular_button.connect("clicked", self.on_simular_button_clicked)
+        self.siguiente_button.connect("clicked", self.on_siguiente_button_clicked)
 
+    def create_boxes(self):
+        #Creacion del panel izquierdo
+        self.left_panel = Gtk.Box(orientation = Gtk.Orientation.VERTICAL, spacing = 6)
+        self.left_panel.set_hexpand(True)
+        self.left_panel.set_vexpand(True)
+
+        #Creacion y configuracion del panel derecho
+        self.right_panel  = Gtk.Box(orientation = Gtk.Orientation.VERTICAL, spacing = 6)
+        especie_label = Gtk.Label(label = "Especie:")
+        self.especie_entry = Gtk.Entry()
+        cantidad_label = Gtk.Label(label = "Cantidad de bacterias (máx 5):")
+        self.cantidad_entry = Gtk.Entry()
+        pasos_label = Gtk.Label(label = "Pasos a simular (máx 10):")
+        self.pasos_entry = Gtk.Entry()
+        factor_ambiental = Gtk.Label(label = "Factor ambiental:")
+        self.factores_ambientales = Gtk.DropDown.new_from_strings(["Nada", "Antibiótico"])
+        self.simular_button = Gtk.Button(label = "Simular")
+        self.siguiente_button  = Gtk.Button(label = "Siguiente paso")
+
+        box_espaciador = Gtk.Box()
+        box_espaciador.set_vexpand(True)
+
+        self.right_panel.append(especie_label)
+        self.right_panel.append(self.especie_entry)
+        self.right_panel.append(cantidad_label)
+        self.right_panel.append(self.cantidad_entry)
+        self.right_panel.append(pasos_label)
+        self.right_panel.append(self.pasos_entry)
+        self.right_panel.append(factor_ambiental)
+        self.right_panel.append(self.factores_ambientales)
+        self.right_panel.append(self.simular_button)
+        self.right_panel.append(box_espaciador)
+        self.right_panel.append(self.siguiente_button)
+
+        #Disposicion de los paneles
+        main_box = Gtk.Box(orientation = Gtk.Orientation.HORIZONTAL, spacing = 6)
+        main_box.append(self.left_panel)
+        main_box.append(self.right_panel)
+        self.set_child(main_box)
+
+    def create_header_bar(self):
+
+        #Encabezado
+        header_bar = Gtk.HeaderBar()
+        self.set_titlebar(titlebar = header_bar)
+        self.set_title("Simulador: colonia bacterian")
+        
+        ################################################
+        #Crear menu -> "Acerca de", "Salir"
+        menu = Gio.Menu.new()
+        self.popover_about_menu = Gtk.PopoverMenu.new_from_model(menu)
+        self.about_menu_button = Gtk.MenuButton.new()
+        self.about_menu_button.set_popover(self.popover_about_menu)
+        self.about_menu_button.set_icon_name("open-menu-symbolic")
+        
+        header_bar.pack_end(self.about_menu_button)
+
+        #AboutDialog -> "Acerca de"
+        about_action = Gio.SimpleAction.new("about", None)
+        about_action.connect("activate", self.on_about_action_activate)
+        self.add_action(about_action)
+        menu.append("Acerca de", "win.about")
+
+        #Salir
+        quit_action = Gio.SimpleAction.new("quit", None)
+        quit_action.connect("activate", self.on_quit_action_activate)
+        self.add_action(quit_action)
+        menu.append("Salir", "win.quit")
+        ################################################
+    
     def on_simular_button_clicked(self, widget):
         check_1 = False
         check_2 = False
@@ -58,6 +132,7 @@ class MainWindow(Gtk.ApplicationWindow):
 
         #Si se ingresaron los datos correctamente, se inicia el simulador
         if check_1 == True and check_2 == True:
+            scroll_list = []
             simulador = Simulador(self.especie_entry.get_text(), int(self.cantidad_entry.get_text()), self.factores_ambientales.get_selected_item().get_string(), int(self.pasos_entry.get_text()))
             simulador.inicia_simulacion()
             bytes_por_simulacion = simulador.run()
@@ -89,73 +164,26 @@ class MainWindow(Gtk.ApplicationWindow):
                 scroll = Gtk.ScrolledWindow()
                 scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
                 scroll.set_child(picture)
-                self.left_panel.append(scroll)
 
-    def create_boxes(self):
-        #Creacion del panel izquierdo
-        self.left_panel = Gtk.Box(orientation = Gtk.Orientation.VERTICAL, spacing = 6)
-        self.left_panel.set_hexpand(True)
-        self.left_panel.set_vexpand(True)
+                self.scroll_list.append(scroll)
 
-        #Creacion y configuracion del panel derecho
-        self.right_panel  = Gtk.Box(orientation = Gtk.Orientation.VERTICAL, spacing = 6)
-        especie_label = Gtk.Label(label = "Especie:")
-        self.especie_entry = Gtk.Entry()
-        cantidad_label = Gtk.Label(label = "Cantidad de bacterias (máx 5):")
-        self.cantidad_entry = Gtk.Entry()
-        pasos_label = Gtk.Label(label = "Pasos a simular (máx 10):")
-        self.pasos_entry = Gtk.Entry()
-        factor_ambiental = Gtk.Label(label = "Factor ambiental:")
-        self.factores_ambientales = Gtk.DropDown.new_from_strings(["Nada", "Antibiótico"])
-        self.simular_button = Gtk.Button(label = "Simular")
+            self.left_panel.append(self.scroll_list[0])
+            self.scroll_en_pantalla = self.scroll_list[0]
 
-        self.right_panel.append(especie_label)
-        self.right_panel.append(self.especie_entry)
-        self.right_panel.append(cantidad_label)
-        self.right_panel.append(self.cantidad_entry)
-        self.right_panel.append(pasos_label)
-        self.right_panel.append(self.pasos_entry)
-        self.right_panel.append(factor_ambiental)
-        self.right_panel.append(self.factores_ambientales)
-        self.right_panel.append(self.simular_button)
+    def on_siguiente_button_clicked(self, widget):
+        contador = 0
+        for i in self.scroll_list:
+            if i == self.scroll_en_pantalla:
+                if contador + 1 > len(self.scroll_list) - 1:
+                    break
+                else:
+                    self.left_panel.remove(i)
+                    self.scroll_en_pantalla = self.scroll_list[contador + 1]
+                    self.left_panel.append(self.scroll_en_pantalla)
+                    break
+            else:
+                contador += 1
 
-        #Disposicion de los paneles
-
-        main_box = Gtk.Box(orientation = Gtk.Orientation.HORIZONTAL, spacing = 6)
-        main_box.append(self.left_panel)
-        main_box.append(self.right_panel)
-        self.set_child(main_box)
-
-    def create_header_bar(self):
-
-        #Encabezado
-        header_bar = Gtk.HeaderBar()
-        self.set_titlebar(titlebar = header_bar)
-        self.set_title("Simulador: colonia bacterian")
-        
-        ################################################
-        #Crear menu -> "Accerca de", "Salir"
-        menu = Gio.Menu.new()
-        self.popover_about_menu = Gtk.PopoverMenu.new_from_model(menu)
-        self.about_menu_button = Gtk.MenuButton.new()
-        self.about_menu_button.set_popover(self.popover_about_menu)
-        self.about_menu_button.set_icon_name("open-menu-symbolic")
-        
-        header_bar.pack_end(self.about_menu_button)
-
-        #AboutDialog -> "Acerca de"
-        about_action = Gio.SimpleAction.new("about", None)
-        about_action.connect("activate", self.on_about_action_activate)
-        self.add_action(about_action)
-        menu.append("Acerca de", "win.about")
-
-        #Salir
-        quit_action = Gio.SimpleAction.new("quit", None)
-        quit_action.connect("activate", self.on_quit_action_activate)
-        self.add_action(quit_action)
-        menu.append("Salir", "win.quit")
-        ################################################
-    
     def on_about_action_activate(self, action, param):
         about_dialog = Gtk.AboutDialog(
             transient_for = self,

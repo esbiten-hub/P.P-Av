@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-import random, io
+import random, io, csv, math
 import numpy as np
 from PIL import Image
 from matplotlib.patches import Patch
@@ -120,6 +120,7 @@ class Colonia:
 
             #################################################################
             #Aqui deberia salir un CSV con el estado inicial de las bacterias
+            self.exportar_csv(paso_contador)
             #################################################################
 
             #Guardar la imagen
@@ -128,12 +129,15 @@ class Colonia:
             plt.close(fig)
             fig_bytes.seek(0)
 
+            self.reporte_estado(paso_contador)
+            
             return fig_bytes
 
         #Si no es el primer paso, se actualiza la grilla según sea el caso
         else:
             matriz = self.__matriz_bacteriana
             factor_ambiental = self.get_ambiente().get_factor_ambiental()
+            ubicacion_bacterias_hijas = [] #Las bacterias hijas no ejecutan funcion hasta el siguiente paso
             for i in range(10):
                 for j in range(10):
 
@@ -150,7 +154,7 @@ class Colonia:
                     #Accion de bacterias activas
                     elif isinstance(matriz[i][j], Bacteria):
                         bacteria = matriz[i][j]
-                        if bacteria.get_estado() == "activa":
+                        if bacteria.get_estado() == "activa" and (i,j) not in ubicacion_bacterias_hijas:
                             if bacteria.get_energia() < 25:
                                 nutrientes = self.get_ambiente().get_nutrientes()[i][j]
                                 if nutrientes > 0:
@@ -181,9 +185,13 @@ class Colonia:
                                     self.__bacterias.append(nueva_bacteria)
                                     matriz[x][y] = nueva_bacteria
                                     self.get_ambiente().get_grilla()[x][y] = 1
+                                    ubicacion_bacterias_hijas.append((x,y))
 
+                            #Inactiva bacterias sin suficiente energia
                             if bacteria.morir():
                                 self.get_ambiente().get_grilla()[i][j] = 2
+
+                            #Costo de energia por ciclo
                             bacteria.desgaste_x_ciclo()
 
             #Actualizar valores de grilla numpy
@@ -234,6 +242,7 @@ class Colonia:
 
             #################################################################
             #Aqui deberia salir un CSV con el estado inicial de las bacterias
+            self.exportar_csv(paso_contador)
             #################################################################
 
             #Guardar la imagen
@@ -242,10 +251,37 @@ class Colonia:
             plt.close(fig)
             fig_bytes.seek(0)
 
+            self.reporte_estado(paso_contador)
+
             return fig_bytes
                         
-    def reporte_estado(self):
-        pass
+    def reporte_estado(self, paso_contador):
+        bacterias_activas = 0
+        bacterias_inactivas = 0
+        bacterias_resistentes = 0
+        for bacteria in self.get_bacterias():
+            if bacteria.get_estado() == "activa":
+                bacterias_activas += 1
+            if bacteria.get_estado() == "inactiva":
+                bacterias_inactivas += 1
+            if bacteria.get_resistencia() == True and bacteria.get_estado() == "activa":
+                bacterias_resistentes += 1
+        print(f"############ Reporte de estado {paso_contador + 1} ############")
+        if paso_contador == 0:
+            print(f"Bacterias iniciales: {bacterias_activas}")
+            print("---> Energía base: 10")
+        else:
+            print(f"Bacterias activas: {bacterias_activas}")
+            print(f"Bacterias inactivas: {bacterias_inactivas}")
+            print(f"Bacterias resistentes: {bacterias_resistentes}")
 
-    def exportar_csv(self):
-        pass
+    def exportar_csv(self, paso_contador):
+        if paso_contador == 0:
+            open('bacterias.csv', 'w').close()
+
+        with open(f'bacterias.csv', 'a', newline='') as file:
+            writer = csv.writer(file)
+            if paso_contador == 0:
+                writer.writerow(['paso', 'id', 'raza', 'energia', 'estado', 'resistencia'])
+            for bacteria in self.get_bacterias():
+                writer.writerow([paso_contador + 1 ,bacteria.get_id(), bacteria.get_raza(), math.trunc(bacteria.get_energia()), bacteria.get_estado(), bacteria.get_resistencia()])

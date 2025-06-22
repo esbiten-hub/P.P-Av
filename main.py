@@ -18,6 +18,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.siguiente_button = None
         self.scroll_list = []
         self.scroll_en_pantalla = None
+        self.simulador = None
 
         self.left_panel = None
         self.right_panel = None
@@ -40,7 +41,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.especie_entry = Gtk.Entry()
         cantidad_label = Gtk.Label(label = "Cantidad de bacterias (máx 5):")
         self.cantidad_entry = Gtk.Entry()
-        pasos_label = Gtk.Label(label = "Pasos a simular (máx 10):")
+        pasos_label = Gtk.Label(label = "Pasos a simular (máx 20):")
         self.pasos_entry = Gtk.Entry()
         factor_ambiental = Gtk.Label(label = "Factor ambiental:")
         self.factores_ambientales = Gtk.DropDown.new_from_strings(["Nada", "Antibiótico"])
@@ -73,15 +74,15 @@ class MainWindow(Gtk.ApplicationWindow):
         #Encabezado
         header_bar = Gtk.HeaderBar()
         self.set_titlebar(titlebar = header_bar)
-        self.set_title("Simulador: colonia bacterian")
+        self.set_title("Simulador: colonia bacteriana")
         
         ################################################
         #Crear menu -> "Acerca de", "Salir"
-        menu = Gio.Menu.new()
-        self.popover_about_menu = Gtk.PopoverMenu.new_from_model(menu)
+        about_menu = Gio.Menu.new()
+        self.popover_about_menu = Gtk.PopoverMenu.new_from_model(about_menu)
         self.about_menu_button = Gtk.MenuButton.new()
         self.about_menu_button.set_popover(self.popover_about_menu)
-        self.about_menu_button.set_icon_name("open-menu-symbolic")
+        self.about_menu_button.set_icon_name("help-about-symbolic")
         
         header_bar.pack_end(self.about_menu_button)
 
@@ -89,13 +90,36 @@ class MainWindow(Gtk.ApplicationWindow):
         about_action = Gio.SimpleAction.new("about", None)
         about_action.connect("activate", self.on_about_action_activate)
         self.add_action(about_action)
-        menu.append("Acerca de", "win.about")
+        about_menu.append("Acerca de", "win.about")
 
-        #Salir
+        #Boton -> Salir
         quit_action = Gio.SimpleAction.new("quit", None)
         quit_action.connect("activate", self.on_quit_action_activate)
         self.add_action(quit_action)
-        menu.append("Salir", "win.quit")
+        about_menu.append("Salir", "win.quit")
+        ################################################
+
+        ################################################
+        #Crear menu -> graficas
+        graficas_menu = Gio.Menu.new()
+        self.popover_graficas_menu = Gtk.PopoverMenu.new_from_model(graficas_menu)
+        self.graficas_menu_button = Gtk.MenuButton.new()
+        self.graficas_menu_button.set_popover(self.popover_graficas_menu)
+        self.graficas_menu_button.set_icon_name("open-menu-symbolic")
+        
+        header_bar.pack_start(self.graficas_menu_button)
+
+        #Graficas de crecimiento Dialog -> "Grafica de crecimiento"
+        graficas_crecimiento_action = Gio.SimpleAction.new("graficas_crecimiento", None)
+        graficas_crecimiento_action.connect("activate", self.on_graficas_crecimiento_activate)
+        self.add_action(graficas_crecimiento_action)
+        graficas_menu.append("Grafica de crecimiento", "win.graficas_crecimiento")
+
+        #Graficas de resistencia Dialog -> "Grafica de resistencia"
+        graficas_resistencia_action = Gio.SimpleAction.new("graficas_resistencia", None)
+        graficas_resistencia_action.connect("activate", self.on_graficas_resistencia_activate)
+        self.add_action(graficas_resistencia_action)
+        graficas_menu.append("Grafica de resistencia", "win.graficas_resistencia")
         ################################################
     
     def on_simular_button_clicked(self, widget):
@@ -116,7 +140,7 @@ class MainWindow(Gtk.ApplicationWindow):
         else:
             check_1 = True
         #Valida que se ingrese el tipo de dato adecuado
-        if (not re.fullmatch("[A-Za-z]+", self.especie_entry.get_text()) or self.cantidad_entry.get_text().isalpha() or int(self.cantidad_entry.get_text()) > 5 or self.pasos_entry.get_text().isalpha() or int(self.pasos_entry.get_text()) > 10) and check_1 == True:
+        if (not re.fullmatch("[A-Za-z]+", self.especie_entry.get_text()) or self.cantidad_entry.get_text().isalpha() or int(self.cantidad_entry.get_text()) > 5 or self.pasos_entry.get_text().isalpha() or int(self.pasos_entry.get_text()) > 20) and check_1 == True:
             error_dialog = Gtk.MessageDialog(
                 transient_for = self,
                 modal = True,
@@ -132,10 +156,15 @@ class MainWindow(Gtk.ApplicationWindow):
 
         #Si se ingresaron los datos correctamente, se inicia el simulador
         if check_1 == True and check_2 == True:
-            scroll_list = []
-            simulador = Simulador(self.especie_entry.get_text(), int(self.cantidad_entry.get_text()), self.factores_ambientales.get_selected_item().get_string(), int(self.pasos_entry.get_text()))
-            simulador.inicia_simulacion()
-            bytes_por_simulacion = simulador.run()
+            #Limpia simulaciones anteriores
+            if self.scroll_en_pantalla != None:
+                self.left_panel.remove(self.scroll_en_pantalla)
+                self.scroll_en_pantalla = None
+
+            self.scroll_list = []
+            self.simulador = Simulador(self.especie_entry.get_text(), int(self.cantidad_entry.get_text()), self.factores_ambientales.get_selected_item().get_string(), int(self.pasos_entry.get_text()))
+            self.simulador.inicia_simulacion()
+            bytes_por_simulacion = self.simulador.run()
             
             for i in bytes_por_simulacion:
                 #Cargar imagen con PIL
@@ -183,6 +212,80 @@ class MainWindow(Gtk.ApplicationWindow):
                     break
             else:
                 contador += 1
+
+    def on_graficas_crecimiento_activate(self, action, param):
+        open_grafico_dialog = Gtk.FileDialog.new()
+        open_grafico_dialog.open(self, None, self.open_grafico_crecimiento_response)
+
+    def open_grafico_crecimiento_response(self, widget, response):
+        archivo = widget.open_finish(response)
+
+        #Recibe imagen de la grafica
+        image, width, height = self.simulador.graficar_crecimiento(archivo)
+
+        #Convertir a bytes
+        data = image.tobytes()
+        gbytes = GLib.Bytes.new(data)
+    
+        texture = Gdk.MemoryTexture.new(
+            width,
+            height,
+            5,
+            gbytes,
+            width * 4
+        )
+
+        #Crea el Gtk.Picture()
+        picture = Gtk.Picture()
+        picture.set_paintable(texture)
+        picture.set_hexpand(True)
+        picture.set_vexpand(True)
+
+        #Poner imagen en scroll
+        scroll = Gtk.ScrolledWindow()
+        scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        scroll.set_child(picture)
+
+        self.left_panel.remove(self.scroll_en_pantalla)
+        self.left_panel.append(scroll)
+        self.scroll_en_pantalla = scroll
+
+    def on_graficas_resistencia_activate(self, action, param):
+        open_grafico_dialog = Gtk.FileDialog.new()
+        open_grafico_dialog.open(self, None, self.open_grafico_resistencia_response)
+
+    def open_grafico_resistencia_response(self, widget, response):
+        archivo = widget.open_finish(response)
+
+        #Recibe imagen de la grafica
+        image, width, height = self.simulador.graficar_resistencia(archivo)
+
+        #Convertir a bytes
+        data = image.tobytes()
+        gbytes = GLib.Bytes.new(data)
+    
+        texture = Gdk.MemoryTexture.new(
+            width,
+            height,
+            5,
+            gbytes,
+            width * 4
+        )
+
+        #Crea el Gtk.Picture()
+        picture = Gtk.Picture()
+        picture.set_paintable(texture)
+        picture.set_hexpand(True)
+        picture.set_vexpand(True)
+
+        #Poner imagen en scroll
+        scroll = Gtk.ScrolledWindow()
+        scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        scroll.set_child(picture)
+
+        self.left_panel.remove(self.scroll_en_pantalla)
+        self.left_panel.append(scroll)
+        self.scroll_en_pantalla = scroll
 
     def on_about_action_activate(self, action, param):
         about_dialog = Gtk.AboutDialog(

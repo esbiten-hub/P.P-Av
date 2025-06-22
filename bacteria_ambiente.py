@@ -87,7 +87,7 @@ class Bacteria:
 
     def dividirse(self, id_nueva_bacteria):
         self.__energia -= 15
-        nueva_bacteria = Bacteria(id_nueva_bacteria, self.get_raza)
+        nueva_bacteria = Bacteria(id_nueva_bacteria, self.__raza)
         if self.__resistencia:
             nueva_bacteria.set_resistencia(True)
         return nueva_bacteria
@@ -108,16 +108,20 @@ class Bacteria:
     def morir(self):
         if self.__energia < 10:
             self.__estado = 'inactiva'
+            self.__energia = 0
             return True
     
     def desgaste_x_ciclo(self):
-        energia_gastada = random.uniform(1,5)
+        energia_gastada = random.uniform(1, 5)
         self.__energia -= energia_gastada
+        if self.__energia < 10:
+            self.__energia = 0
+            self.__estado = 'inactiva'
 
 class Ambiente:
     def __init__(self, factor_ambiental):
         self.__grilla = np.zeros((10, 10), dtype=int) #grilla de numeros que se va a graficar
-        self.__grilla_nutrientes = [[25 for i in range(10)] for j in range(10)]
+        self.__grilla_nutrientes = [[50 for i in range(10)] for j in range(10)]
         self.__factor_ambiental = factor_ambiental
     
     def get_grilla(self):

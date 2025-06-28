@@ -62,6 +62,29 @@ class Colonia:
                         ocupado.append(nueva_posicion)
                         break
             
+            #Añade biofilm a la matriz
+            while True:
+                pase =  True
+                pase_2 = True
+                i = random.randint(0,9)
+                j = random.randint(0,9)
+                ubicaciones_biofilm = [(i,j), (i,j+1), (i-1,j), (i-1,j+1)]
+                for ubicacion in ubicaciones_biofilm:
+                    if ubicacion[0] < 0 or ubicacion[0] > 9 or ubicacion[1] > 9 or ubicacion[1] < 0:
+                        pase = False
+                        break
+                if pase:
+                    for ubicacion in ubicaciones_biofilm:
+                        if matriz[ubicacion[0]][ubicacion[1]] != 0:
+                            pase_2 = False
+                            break
+                if pase == True and pase_2 == True:
+                    matriz[i][j] = "biofilm"
+                    matriz[i][j+1] = "biofilm"
+                    matriz[i-1][j] = "biofilm"
+                    matriz[i-1][j+1] = "biofilm"
+                    break
+
             #Añade factor ambiental a la matriz
             factor_ambiental = self.get_ambiente().get_factor_ambiental()
             if factor_ambiental == 'Antibiótico': #Añade antibiotico a 5 casillas aleatorias de la matriz
@@ -83,6 +106,8 @@ class Colonia:
                         grilla[i,j] = 1
                     elif matriz[i][j] == factor_ambiental:
                         grilla[i,j] = 4
+                    elif matriz[i][j] == "biofilm":
+                        grilla[i,j] = 5 
 
             #Grafica grilla
             #Crear el mapa de colores
@@ -164,6 +189,12 @@ class Colonia:
                                 else:
                                     bacteria.falta_de_alimento()
 
+                            #Reunir coordenadas hacia donde podría haber biofilm
+                            ubicaciones_posibles = [[i-1,j], [i+1,j], [i,j-1], [i,j+1], [i-1,j-1], [i-1,j+1], [i+1,j-1], [i+1,j+1]]
+                            for ubicacion in ubicaciones_posibles:
+                                if ubicacion == "biofilm":
+                                    bacteria.alimentar(20)
+
                             if bacteria.get_energia() >= 25:
                                 #Reunir coordenadas hacia donde podría dividirse la bacteria
                                 ubicaciones_posibles = [i-1,j], [i+1,j], [i,j-1], [i,j+1], [i-1,j-1], [i-1,j+1], [i+1,j-1], [i+1,j+1]
@@ -174,7 +205,7 @@ class Colonia:
                                         pass
                                     elif isinstance(matriz[ubicacion[0]][ubicacion[1]], Bacteria):
                                         pass
-                                    elif isinstance(matriz[ubicacion[0]][ubicacion[1]], str): #en caso de que haya factor ambiental
+                                    elif isinstance(matriz[ubicacion[0]][ubicacion[1]], str): #en caso de que haya factor ambiental o biofilm
                                         pass
                                     else:
                                         ubicaciones_validas.append(ubicacion)
@@ -186,6 +217,19 @@ class Colonia:
                                     matriz[x][y] = nueva_bacteria
                                     self.get_ambiente().get_grilla()[x][y] = 1
                                     ubicacion_bacterias_hijas.append((x,y))
+
+                            #Probabilidad de mutacion
+                            #Si estan cerca de biofilm no mutan
+                            muta = True
+                            ubicaciones_posibles = [i-1,j], [i+1,j], [i,j-1], [i,j+1], [i-1,j-1], [i-1,j+1], [i+1,j-1], [i+1,j+1]
+                            for ubicacion in ubicaciones_posibles:
+                                if ubicacion[0] < 0 or ubicacion[0] > 9 or ubicacion[1] < 0 or ubicacion[1] > 9:
+                                        pass
+                                else:
+                                    if matriz[ubicacion[0]][ubicacion[1]] == "biofilm":
+                                        muta = False
+                            if muta == True:
+                                bacteria.mutar()                   
 
                             #Inactiva bacterias sin suficiente energia
                             if bacteria.morir():

@@ -93,7 +93,18 @@ class Bacteria:
         return nueva_bacteria
         
     def mutar(self):
-        pass
+        mutacion = random.random()
+        if mutacion <= 0.01:
+            self.__energia = 0
+            self.__estado = "inactiva"
+            self.__resistencia = False
+        if mutacion > 0.01 and mutacion <= 0.02:
+            self.__resistencia = True
+        if mutacion > 0.02 and mutacion <= 0.03:
+            energia_extra = random.uniform(1, 5)
+            self.__energia += energia_extra
+        else:
+            pass
 
     def efecto_factor_ambiental(self, factor_ambiental):
         if factor_ambiental == 'Antibiótico':

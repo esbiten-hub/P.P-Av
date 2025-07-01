@@ -69,11 +69,9 @@ class Simulador():
 
         #Filtrar solo bacterias resistentes
         resistentes = datos[datos["resistencia"] == True]
-        print(resistentes)
 
         #Contar bacterias resistentes por paso
         resistentes_por_paso = resistentes.groupby("paso").size()
-        print(resistentes_por_paso)
 
         #Grafica de resistencia
         plt.figure(figsize=(10, 10))

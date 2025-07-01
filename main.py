@@ -28,6 +28,7 @@ class MainWindow(Gtk.ApplicationWindow):
 
         self.simular_button.connect("clicked", self.on_simular_button_clicked)
         self.siguiente_button.connect("clicked", self.on_siguiente_button_clicked)
+        self.anterior_button.connect("clicked", self.on_anterior_button_clicked)
 
     def create_boxes(self):
         #Creacion del panel izquierdo
@@ -47,6 +48,11 @@ class MainWindow(Gtk.ApplicationWindow):
         self.factores_ambientales = Gtk.DropDown.new_from_strings(["Nada", "Antibiótico"])
         self.simular_button = Gtk.Button(label = "Simular")
         self.siguiente_button  = Gtk.Button(label = "Siguiente paso")
+        self.anterior_button = Gtk.Button(label = "Anterior paso")
+
+        box_pasos = Gtk.Box(orientation = Gtk.Orientation.HORIZONTAL, spacing = 6)
+        box_pasos.append(self.anterior_button)
+        box_pasos.append(self.siguiente_button)
 
         box_espaciador = Gtk.Box()
         box_espaciador.set_vexpand(True)
@@ -61,7 +67,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.right_panel.append(self.factores_ambientales)
         self.right_panel.append(self.simular_button)
         self.right_panel.append(box_espaciador)
-        self.right_panel.append(self.siguiente_button)
+        self.right_panel.append(box_pasos)
 
         #Disposicion de los paneles
         main_box = Gtk.Box(orientation = Gtk.Orientation.HORIZONTAL, spacing = 6)
@@ -201,6 +207,13 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def on_siguiente_button_clicked(self, widget):
         contador = 0
+
+        if self.scroll_en_pantalla not in self.scroll_list:
+            self.left_panel.remove(self.scroll_en_pantalla)
+            self.scroll_en_pantalla = self.scroll_list[0]
+            self.left_panel.append(self.scroll_en_pantalla)
+            return
+
         for i in self.scroll_list:
             if i == self.scroll_en_pantalla:
                 if contador + 1 > len(self.scroll_list) - 1:
@@ -208,6 +221,27 @@ class MainWindow(Gtk.ApplicationWindow):
                 else:
                     self.left_panel.remove(i)
                     self.scroll_en_pantalla = self.scroll_list[contador + 1]
+                    self.left_panel.append(self.scroll_en_pantalla)
+                    break
+            else:
+                contador += 1
+
+    def on_anterior_button_clicked(self, widget):
+        contador = 0
+
+        if self.scroll_en_pantalla not in self.scroll_list:
+            self.left_panel.remove(self.scroll_en_pantalla)
+            self.scroll_en_pantalla = self.scroll_list[0]
+            self.left_panel.append(self.scroll_en_pantalla)
+            return
+
+        for i in self.scroll_list:
+            if i == self.scroll_en_pantalla:
+                if contador - 1 < 0:
+                    break
+                else:
+                    self.left_panel.remove(i)
+                    self.scroll_en_pantalla = self.scroll_list[contador - 1]
                     self.left_panel.append(self.scroll_en_pantalla)
                     break
             else:

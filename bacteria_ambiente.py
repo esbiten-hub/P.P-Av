@@ -70,6 +70,7 @@ class Bacteria:
             print(f"Error: {e}")
     
     def alimentar(self, nutrientes):
+        #Recibe nutrientes de la matriz de nutrientes
         if nutrientes >= 20:
             while True:
                 nutrientes_consumir = random.uniform(20, 25)
@@ -77,19 +78,25 @@ class Bacteria:
                     break
             self.__energia += nutrientes_consumir
             nutrientes -= nutrientes_consumir
+            #Devuelve los nutrientes restantes a la matriz
             return nutrientes
+
         elif 0 < nutrientes < 20:
             self.__energia += nutrientes
+            #Consume todos los nutrientes, devuelve 0
             return 0
     
     def falta_de_alimento(self):
         self.__energia -= random.uniform(10, 15) #Pierde energia por falta de nutrientes 
 
     def dividirse(self, id_nueva_bacteria):
+        #Dividirse resta 15 de energia
         self.__energia -= 15
         nueva_bacteria = Bacteria(id_nueva_bacteria, self.__raza)
         if self.__resistencia:
+            #La bacteria hija heredará resistencia
             nueva_bacteria.set_resistencia(True)
+        #Devuelve la bacteria 
         return nueva_bacteria
         
     def mutar(self):
@@ -108,32 +115,38 @@ class Bacteria:
 
     def efecto_factor_ambiental(self, factor_ambiental):
         if factor_ambiental == 'Antibiótico':
+            #Si no hay resistencia en la bacteria viva, tiene dos opciones:
             if not self.__resistencia and self.__estado == "activa":
                 p = 0.15
+                #Muere: 85% probabilidad
                 if random.random() > p:
                     self.__estado = 'inactiva'
                     self.__energia = 0
                 else:
+                    #Genera resistencia al antibiótico: 15% probabilidad
                     self.__resistencia = True
 
     def morir(self):
+        #Muere cuando tiene poca energía
         if self.__energia < 10:
             self.__estado = 'inactiva'
             self.__energia = 0
             return True
     
     def desgaste_x_ciclo(self):
+        #Entre ciclos, hay un gasto de energía mínimo
         energia_gastada = random.uniform(1, 5)
         self.__energia -= energia_gastada
+
         if self.__energia < 10:
             self.__energia = 0
             self.__estado = 'inactiva'
 
 class Ambiente:
     def __init__(self, factor_ambiental):
-        self.__grilla = np.zeros((10, 10), dtype=int) #grilla de numeros que se va a graficar
-        self.__grilla_nutrientes = [[50 for i in range(10)] for j in range(10)]
-        self.__factor_ambiental = factor_ambiental
+        self.__grilla = np.zeros((10, 10), dtype=int) #Grilla de numeros -> Es la que se grafica
+        self.__grilla_nutrientes = [[50 for i in range(10)] for j in range(10)] #Matriz de nutrientes
+        self.__factor_ambiental = factor_ambiental #Nada/Antibiótico
     
     def get_grilla(self):
         return self.__grilla
@@ -175,6 +188,7 @@ class Ambiente:
             print(f"Error: {e}")
 
     def difundir_nutrientes(self):
+        #Suma los nutrientes de la grilla y los redistribuye uniformemente
         total_nutrientes = 0
         for i in range(10):
             for j in range(10):

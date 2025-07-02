@@ -10,7 +10,7 @@ class Colonia:
     def __init__(self, bacterias, ambiente):
         self.__bacterias = bacterias #list de Bacterias
         self.__ambiente = ambiente #Ambiente
-        self.__matriz_bacteriana = None
+        self.__matriz_bacteriana = None #Matriz de objetos
     
     def get_bacterias(self):
         return self.__bacterias
@@ -46,13 +46,16 @@ class Colonia:
 
             #Crea la matriz de Objetos Bacteria
             matriz = [[0 for i in range(10)] for j in range(10)]
+            #Primera bacteria en zona superior izquierda
             matriz[0][0] = self.get_bacterias()[0]
             ocupado.append([0,0])
+            #Asigna en la matriz el resto de bacterias alrededor de una existente
             for bacteria in self.get_bacterias()[1:]:
                 while True:
                     x1, y1 = random.choice(ocupado)
                     x2, y2 = random.choice(direcciones_posibles)
                     nueva_posicion = [x1 + x2, y1 + y2]
+                    #Evita una coordenada fuera de la matriz y una coordenada ocupada
                     if nueva_posicion[0] < 0 or nueva_posicion[0] > 9 or nueva_posicion[1] < 0 or nueva_posicion[1] > 9:
                         pass
                     elif matriz[nueva_posicion[0]][nueva_posicion[1]] != 0:
@@ -70,6 +73,7 @@ class Colonia:
                 j = random.randint(0,9)
                 ubicaciones_biofilm = [(i,j), (i,j+1), (i-1,j), (i-1,j+1)]
                 for ubicacion in ubicaciones_biofilm:
+                    #Evita salir de la matriz y una coordenada ocupada
                     if ubicacion[0] < 0 or ubicacion[0] > 9 or ubicacion[1] > 9 or ubicacion[1] < 0:
                         pase = False
                         break
@@ -92,14 +96,17 @@ class Colonia:
                     while True:
                         x = random.randint(0, 9)
                         y = random.randint(0, 9)
+                        #Solo se añadirá si el espacio de la matriz esta vacío
                         if matriz[x][y] == 0:
                             matriz[x][y] = factor_ambiental
                             break
-
+            
+            #Asigna la matriz de objetos al atributo de la clase
             self.__matriz_bacteriana = matriz
 
-            #Obtiene la matriz numpy de Ambiente
+            #Obtiene la grilla numpy de Ambiente
             grilla = self.get_ambiente().get_grilla()
+            #Lee la matriz y asigna a la grilla los valores correspondientes
             for i in range(10):
                 for j in range(10):
                     if isinstance(matriz[i][j], Bacteria):
@@ -143,31 +150,33 @@ class Colonia:
             plt.title("Colonia de bacterias - Paso 1")
             plt.tight_layout()
 
-            #################################################################
-            #Aqui deberia salir un CSV con el estado inicial de las bacterias
+            #Exporta un csv con los resultados del primer paso
             self.exportar_csv(paso_contador)
-            #################################################################
 
             #Guardar la imagen
+            #Guarda archivo en memoria -> bytes
             fig_bytes = io.BytesIO()
+            #Guarda la grafica en formato png en el espacio de memoria asignado
             fig.savefig(fig_bytes, format='png')
+            #Libera el espacio de memoria de la grafica
             plt.close(fig)
             fig_bytes.seek(0)
 
+            #Realiza el reporte de estado del paso actual (1)
             self.reporte_estado(paso_contador)
             
             return fig_bytes
 
-        #Si no es el primer paso, se actualiza la grilla según sea el caso
+        #Si no es el primer paso, se actualiza la matriz y luego la grilla
         else:
             matriz = self.__matriz_bacteriana
             factor_ambiental = self.get_ambiente().get_factor_ambiental()
-            ubicacion_bacterias_hijas = [] #Las bacterias hijas no ejecutan funcion hasta el siguiente paso
+            ubicacion_bacterias_hijas = [] #IMPORTANTE: Las bacterias hijas no ejecutan funcion hasta el siguiente paso
             for i in range(10):
                 for j in range(10):
-
                     #Efecto de factor ambiental
                     if isinstance(matriz[i][j], str):
+                        #Si detecta antibiótico, busca bacterias alrededor y ocurre el evento para antibióticos
                         if matriz[i][j] == 'Antibiótico':
                             ubicaciones_posibles = [i-1,j], [i+1,j], [i,j-1], [i,j+1], [i-1,j-1], [i-1,j+1], [i+1,j-1], [i+1,j+1]
                             for ubicacion in ubicaciones_posibles:
@@ -179,27 +188,38 @@ class Colonia:
                     #Accion de bacterias activas
                     elif isinstance(matriz[i][j], Bacteria):
                         bacteria = matriz[i][j]
+                        #Si esta activa y no es una bacteria hija del paso actual
                         if bacteria.get_estado() == "activa" and (i,j) not in ubicacion_bacterias_hijas:
+                            #Come si no ha llegado al umbral de energia para dividirse
                             if bacteria.get_energia() < 25:
+                                #Recibe los nutrientes en la ubicacion de la bacteria
                                 nutrientes = self.get_ambiente().get_nutrientes()[i][j]
                                 if nutrientes > 0:
-                                    nutrientes_restantes = bacteria.alimentar(nutrientes)                                    
+                                    #La bacteria se alimenta
+                                    nutrientes_restantes = bacteria.alimentar(nutrientes)   
+                                    #Los nutrientes sobrantes se devuelven a la matriz                                 
                                     self.get_ambiente().set_nutrientes_coordenada(i, j, nutrientes_restantes)
+                                    #Se difunden los nutrientes
                                     self.get_ambiente().difundir_nutrientes()
                                 else:
+                                    #La bacteria no se alimenta, pierde energía
                                     bacteria.falta_de_alimento()
 
                             #Reunir coordenadas hacia donde podría haber biofilm
                             ubicaciones_posibles = [[i-1,j], [i+1,j], [i,j-1], [i,j+1], [i-1,j-1], [i-1,j+1], [i+1,j-1], [i+1,j+1]]
                             for ubicacion in ubicaciones_posibles:
+                                #El biofilm entrega una cantidad de nutrientes
                                 if ubicacion == "biofilm":
-                                    bacteria.alimentar(20)
+                                    nutrientes_bioflm = random.uniform(10,20)
+                                    bacteria.alimentar(nutrientes_biofilm)
 
+                            #Se divide alcanzando energía 25
                             if bacteria.get_energia() >= 25:
                                 #Reunir coordenadas hacia donde podría dividirse la bacteria
                                 ubicaciones_posibles = [i-1,j], [i+1,j], [i,j-1], [i,j+1], [i-1,j-1], [i-1,j+1], [i+1,j-1], [i+1,j+1]
                                 #Filtrar ubicaciones
                                 ubicaciones_validas = []
+                                #Evita coordenadas ocupadas
                                 for ubicacion in ubicaciones_posibles:
                                     if ubicacion[0] < 0 or ubicacion[0] > 9 or ubicacion[1] < 0 or ubicacion[1] > 9:
                                         pass
@@ -208,7 +228,9 @@ class Colonia:
                                     elif isinstance(matriz[ubicacion[0]][ubicacion[1]], str): #en caso de que haya factor ambiental o biofilm
                                         pass
                                     else:
+                                        #Guarda la ubicación válida
                                         ubicaciones_validas.append(ubicacion)
+                                #Si hay ubicaciones donde dividirse, elige una al azar
                                 if len(ubicaciones_validas) > 0:
                                     x, y = random.choice(ubicaciones_validas)
                                     id_nueva_bacteria = self.get_bacterias()[-1].get_id() + 1
@@ -222,6 +244,8 @@ class Colonia:
                             #Si estan cerca de biofilm no mutan
                             muta = True
                             ubicaciones_posibles = [i-1,j], [i+1,j], [i,j-1], [i,j+1], [i-1,j-1], [i-1,j+1], [i+1,j-1], [i+1,j+1]
+                            #Busca biofilm alrededor de la bacteria
+                            #Hay biofilm -> no muta / No hay biofilm -> puede mutar
                             for ubicacion in ubicaciones_posibles:
                                 if ubicacion[0] < 0 or ubicacion[0] > 9 or ubicacion[1] < 0 or ubicacion[1] > 9:
                                         pass
@@ -238,7 +262,7 @@ class Colonia:
                             #Costo de energia por ciclo
                             bacteria.desgaste_x_ciclo()
 
-            #Actualizar valores de grilla numpy
+            #Actualizar valores/numeros de grilla numpy
             grilla = self.get_ambiente().get_grilla()
             for i in range(10):
                 for j in range(10):
@@ -284,10 +308,8 @@ class Colonia:
             plt.title(f"Colonia de bacterias - Paso {paso_contador + 1}")
             plt.tight_layout()
 
-            #################################################################
-            #Aqui deberia salir un CSV con el estado inicial de las bacterias
+            #Exporta un csv con los resultados del paso
             self.exportar_csv(paso_contador)
-            #################################################################
 
             #Guardar la imagen
             fig_bytes = io.BytesIO()
@@ -295,6 +317,7 @@ class Colonia:
             plt.close(fig)
             fig_bytes.seek(0)
 
+            #Realiza el reporte de estado del paso actual 
             self.reporte_estado(paso_contador)
 
             return fig_bytes
@@ -303,6 +326,7 @@ class Colonia:
         bacterias_activas = 0
         bacterias_inactivas = 0
         bacterias_resistentes = 0
+        #Cuenta bacterias activas, resistentes e inactivas
         for bacteria in self.get_bacterias():
             if bacteria.get_estado() == "activa":
                 bacterias_activas += 1
@@ -320,9 +344,12 @@ class Colonia:
             print(f"Bacterias resistentes: {bacterias_resistentes}")
 
     def exportar_csv(self, paso_contador):
+        #Si es el primer paso abre el csv,
+        #haya o no algo escrito, se dejará el csv vacío
         if paso_contador == 0:
             open('bacterias.csv', 'w').close()
-
+        #Se escribe el csv en 'a' (append)
+        #para que se guarden todos los pasos en el mismo csv
         with open(f'bacterias.csv', 'a', newline='') as file:
             writer = csv.writer(file)
             if paso_contador == 0:

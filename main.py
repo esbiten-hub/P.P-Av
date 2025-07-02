@@ -16,8 +16,12 @@ class MainWindow(Gtk.ApplicationWindow):
         self.pasos_entry = None
         self.factores_ambientales = None
         self.siguiente_button = None
+
+        #Guarda todas las grillas de los pasos
         self.scroll_list = []
+        #Es la imagen (grilla o gráfica) en pantalla
         self.scroll_en_pantalla = None
+        
         self.simulador = None
 
         self.left_panel = None
@@ -25,7 +29,7 @@ class MainWindow(Gtk.ApplicationWindow):
 
         self.create_header_bar()
         self.create_boxes()
-
+        
         self.simular_button.connect("clicked", self.on_simular_button_clicked)
         self.siguiente_button.connect("clicked", self.on_siguiente_button_clicked)
         self.anterior_button.connect("clicked", self.on_anterior_button_clicked)
@@ -201,7 +205,7 @@ class MainWindow(Gtk.ApplicationWindow):
                 scroll.set_child(picture)
 
                 self.scroll_list.append(scroll)
-
+ 
             self.left_panel.append(self.scroll_list[0])
             self.scroll_en_pantalla = self.scroll_list[0]
 
